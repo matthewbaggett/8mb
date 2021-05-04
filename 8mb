@@ -1,0 +1,21 @@
+#/bin/bash
+#set -o xtrace
+targetSizeKilobytes=8192
+fileInput=$1
+ext="${fileInput##*.}"; 
+fileOutput="${fileInput}.shrunk.${ext}"
+durationSeconds=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $fileInput)
+bitrate=$(echo "scale=0; $targetSizeKilobytes/ $durationSeconds" | bc)
+#bitrate=$(($targetSizeKilobytes / $durationSeconds))
+beforeSizeBytes=$(stat --printf="%s" $fileInput)
+echo "Shrinking ${fileInput} to ${targetSizeKilobytes}KB. Bitrate: ${bitrate}k"
+ffmpeg \
+	-y \
+	-hide_banner \
+	-loglevel error \
+	-i "$fileInput" \
+	-b ${bitrate}k \
+	$fileOutput
+afterSizeBytes=$(stat --printf="%s" $fileOutput)
+shrinkPercentage=$(($beforeSizeBytes / $afterSizeBytes))
+echo "Rebuilt file as ${fileOutput}, shrank to ${shrinkPercentage}% of original size"
