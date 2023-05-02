@@ -1,7 +1,7 @@
 # 8mb
 8MB video compression bash script for ffmpeg. 
 
-I refuse to pay for Discord Nitro. Stop giving them money. They've raised $479.3M of Venture Capital. They don't need your money.
+I refuse to pay for Discord Nitro. Stop giving them money. They've raised [$0.9945 Bn of Venture Capital](https://www.crunchbase.com/organization/discord/company_financials). They don't need your money.
 
 Usage:
 ```
