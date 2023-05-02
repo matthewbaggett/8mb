@@ -1,11 +1,11 @@
-#/bin/bash
+#!/bin/bash
 #set -o xtrace
 targetSizeKilobytes=8192
 fileInput=$1
 ext="${fileInput##*.}"; 
 fileOutput="${fileInput}.shrunk.${ext}"
 durationSeconds=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $fileInput)
-bitrate=$(echo "scale=0; $targetSizeKilobytes/ $durationSeconds" | bc)
+bitrate=$(( $(echo "scale=0; $targetSizeKilobytes/$durationSeconds" | bc) * 8 ))
 #bitrate=$(($targetSizeKilobytes / $durationSeconds))
 beforeSizeBytes=$(stat --printf="%s" $fileInput)
 echo "Shrinking ${fileInput} to ${targetSizeKilobytes}KB. Bitrate: ${bitrate}k"
