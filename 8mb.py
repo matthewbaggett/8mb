@@ -2,6 +2,16 @@
 import sys
 import subprocess
 import os
+import argparse
+import time
+startTime = time.time()
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-f', '--file', help='File to Crush', required=True)
+parser.add_argument('-o', '--output', help='Output File', required=False)
+parser.add_argument("-s", "--size", help="Target Size in MB", type=int, default=8)
+parser.add_argument("-t", "--tolerance", help="Tolerance", type=int,default=10)
+args = parser.parse_args()
 
 def get_duration(fileInput):
 
@@ -14,7 +24,6 @@ def get_duration(fileInput):
             fileInput
         ])[:-1]
     )
-
 
 def transcode(fileInput, fileOutput, bitrate):
     command = [
@@ -39,17 +48,21 @@ def transcode(fileInput, fileOutput, bitrate):
     #print(proc.stdout)
 
 # Tolerance below 8mb
-tolerance = 10
-fileInput = sys.argv[1]
-fileOutput = fileInput + ".crushed.mp4"
-targetSizeKilobytes = 8192
+tolerance = args.tolerance
+fileInput = args.file
+if args.output:
+    fileOutput = args.output
+else:
+    fileOutput = fileInput[:fileInput.rindex('.')] + '.crushed' + fileInput[fileInput.rindex('.'):]
+targetSizeKilobytes = args.size * 1024
 targetSizeBytes = targetSizeKilobytes * 1024
-durationSeconds = get_duration(sys.argv[1])
+durationSeconds = get_duration(fileInput)
 bitrate = round( targetSizeBytes / durationSeconds)
 beforeSizeBytes = os.stat(fileInput).st_size
 
-factor = 0
+print("Crushing", fileInput, "to", targetSizeKilobytes, "KB with tolerance", tolerance, "%")
 
+factor = 0
 attempt = 0
 while (factor > 1.0 + (tolerance/100)) or (factor < 1):
     attempt = attempt + 1
@@ -67,4 +80,6 @@ while (factor > 1.0 + (tolerance/100)) or (factor < 1):
         "Percentage of target:", '{:.0f}'.format(percentOfTarget),
         "and bitrate", bitrate
     )
-print("Completed in", attempt, "attempts.")
+
+print("Completed in", attempt, "attempts over", round(time.time() - startTime, 2), "seconds")
+print(" > Exported as", fileOutput)

@@ -1,23 +1,45 @@
 #!/bin/bash
-#set -o xtrace
-targetSizeKilobytes=8192
-fileInput=$1
-ext="${fileInput##*.}"; 
-fileOutput="${fileInput}.shrunk.${ext}"
-durationSeconds=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $fileInput)
-bitrate=$(( $(echo "scale=0; $targetSizeKilobytes/$durationSeconds" | bc) * 8 ))
-#bitrate=$(($targetSizeKilobytes / $durationSeconds))
-beforeSizeBytes=$(stat --printf="%s" $fileInput)
-echo "Shrinking ${fileInput} to ${targetSizeKilobytes}KB. Bitrate: ${bitrate}k"
-ffmpeg \
-	-y \
-	-hide_banner \
-	-loglevel error \
-	-i "$fileInput" \
-	-b ${bitrate}k \
-	-cpu-used 6 \
-	-c:a copy \
-	$fileOutput
-afterSizeBytes=$(stat --printf="%s" $fileOutput)
-shrinkPercentage=$(($beforeSizeBytes / $afterSizeBytes))
-echo "Rebuilt file as ${fileOutput}, shrank to ${shrinkPercentage}% of original size"
+set -eo pipefail
+
+# This script is supposed to be used as a wrapper:
+# ./8mb -f <file> -s 10 -t 5
+
+# defaults
+size=10
+tolerance=5
+
+usage() {
+    echo "Usage: $0 -f <file> [-s <size>] [-t <tolerance>]"
+    echo "  -f <file>      File to compress"
+    echo "  -s <size>      Target size in MB (default: 10)"
+    echo "  -t <tolerance> Tolerance in % (default: 5)"
+    echo "  -h             Display this help message"
+}
+
+# parse args
+while getopts h:f:s:t: flag
+do
+    case "${flag}" in
+        f) file=${OPTARG};;
+        s) size=${OPTARG};;
+        t) tolerance=${OPTARG};;
+        h) usage
+           exit 0;;
+        *) usage
+           exit 1;;
+    esac
+done
+
+if [ -z "$file" ]; then
+    usage
+    exit 1
+fi
+
+docker run \
+  --rm \
+  --user "$(id -u):$(id -g)" \
+  -v "$(dirname "$file"):/data" \
+  matthewbaggett/8mb \
+  -f "/data/$(basename "$file")" \
+  --size "$size" \
+  --tolerance "$tolerance"
