@@ -1,10 +1,6 @@
 #!/bin/bash
 set -eo pipefail
 
-# This script is supposed to be used as a wrapper:
-# ./8mb -f <file> -s 10 -t 5
-
-# defaults
 size=10
 tolerance=5
 
